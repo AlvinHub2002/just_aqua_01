@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:just_aqua_01/signup.dart';
+import 'package:just_aqua_01/LandingPage.dart';
 
 class LoginPage extends StatelessWidget {
   @override
@@ -70,7 +72,12 @@ class LoginPage extends StatelessWidget {
                       child: MaterialButton(
                         minWidth: double.infinity,
                         height: 60,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => LandingPage()));
+                        },
                         color: Color(0xff0095FF),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -87,22 +94,32 @@ class LoginPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Text("Don't have an account?",
-                          style: TextStyle(
-                              color:
-                                  Colors.grey[600])), // Set text color to white
-                      Text(
-                        " Sign up",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
-                          color: Colors.white, // Set text color to white
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SignupPage(),
                         ),
-                      )
-                    ],
+                      );
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Text("Don't have an account?",
+                            style: TextStyle(
+                                color: Colors
+                                    .grey[600])), // Set text color to white
+                        Text(
+                          " Sign up",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 18,
+                            color: Colors.blue, // Set text color to white
+                          ),
+                        )
+                      ],
+                    ),
                   ),
                   Container(
                     padding: EdgeInsets.only(top: 100),

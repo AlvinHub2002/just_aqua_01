@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:just_aqua_01/login.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -91,22 +92,31 @@ class SignupPage extends StatelessWidget {
                   ),
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text("Already have an account?",
-                      style: TextStyle(
-                          color: Colors.white)), // Set text color to white
-                  Text(
-                    " Login",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 18,
-                      color: Colors.white,
-                    ),
-                  )
-                ],
-              )
+              InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LoginPage(),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text("Already have an account?",
+                          style: TextStyle(
+                              color: Colors.white)), // Set text color to white
+                      Text(
+                        " Login",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          color: Colors.blue,
+                        ),
+                      )
+                    ],
+                  ))
             ],
           ),
         ),
