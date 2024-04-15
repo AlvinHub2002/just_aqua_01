@@ -1,14 +1,14 @@
 {
   "project_info": {
-    "project_number": "317953999679",
-    "firebase_url": "https://justaqua-01-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "project_id": "justaqua-01",
-    "storage_bucket": "justaqua-01.appspot.com"
+    "project_number": "588729013635",
+    "firebase_url": "https://justaqua-68887-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "justaqua-68887",
+    "storage_bucket": "justaqua-68887.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:317953999679:android:cabcfb69d34833a258c98a",
+        "mobilesdk_app_id": "1:588729013635:android:189b1dd6441cabfd0f52b6",
         "android_client_info": {
           "package_name": "com.example.just_aqua_01"
         }
@@ -16,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBd_ZdPHQ8udsg7gZ0WVtQNVBirTwoL_5g"
+          "current_key": "AIzaSyCgnj-DPRUgRmcHGziDv43BIBcy_2uDbLo"
         }
       ],
       "services": {

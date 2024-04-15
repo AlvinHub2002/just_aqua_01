@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'temperature_page.dart'; // Import your temperature page file
 
 class LandingPage extends StatefulWidget {
   @override
@@ -7,7 +8,7 @@ class LandingPage extends StatefulWidget {
 }
 
 class _LandingPageState extends State<LandingPage> {
-  final DatabaseReference _database = FirebaseDatabase.instance.reference();
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
   int _currentIndex = 0;
   String temperatureValue = ''; // Variable to hold the temperature value
   String ammoniaValue = ''; // Variable to hold the ammonia value
@@ -160,10 +161,19 @@ class _LandingPageState extends State<LandingPage> {
               Row(
                 children: [
                   Expanded(
-                    child: buildSensorCard(
-                      "Temperature",
-                      temperatureValue,
-                      Icons.thermostat,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => TemperaturePage()),
+                        );
+                      },
+                      child: buildSensorCard(
+                        "Temperature",
+                        temperatureValue,
+                        Icons.thermostat,
+                      ),
                     ),
                   ),
                   SizedBox(width: 16),
