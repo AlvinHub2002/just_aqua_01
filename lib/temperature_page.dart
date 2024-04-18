@@ -141,7 +141,7 @@ class _TemperaturePageState extends State<TemperaturePage> {
                 height: 100,
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 104, 104, 104).withOpacity(0.5),
+                  color: Color.fromARGB(255, 24, 24, 24).withOpacity(0.5),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                       color:

@@ -32,6 +32,8 @@ dependencies:
   flutter:
     sdk: flutter
   firebase_database: ^10.0.0
+  provider: ^5.0.0
+
  
 
   # The following adds the Cupertino Icons font to your application.
@@ -66,7 +68,7 @@ flutter:
     - images/app_icon.png
     - images/login_image.png
     - images/water.png
-
+    - images/ig.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -94,6 +96,11 @@ flutter:
   #     fonts:
   #       - asset: fonts/TrajanPro.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #   - family: Roboto
+  #     fonts:
+  #       - asset: fonts/Roboto-Regular.ttf
+  #       - asset: fonts/Roboto-Bold.ttf
   #         weight: 700
   #
   # For details regarding fonts from package dependencies,
