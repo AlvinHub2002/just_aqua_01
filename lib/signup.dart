@@ -12,7 +12,8 @@ void main() {
 
 class SignupPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final DatabaseReference _userRef = FirebaseDatabase.instance.reference().child('users');
+  final DatabaseReference _userRef =
+      FirebaseDatabase.instance.reference().child('users');
 
   TextEditingController _usernameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
@@ -30,7 +31,8 @@ class SignupPage extends StatelessWidget {
         iconTheme: IconThemeData(
           color: Colors.white,
         ),
-        actionsIconTheme: IconThemeData(color: const Color.fromARGB(255, 44, 42, 42)),
+        actionsIconTheme:
+            IconThemeData(color: const Color.fromARGB(255, 44, 42, 42)),
         leading: IconButton(
           onPressed: () {
             Navigator.pop(context);
@@ -76,8 +78,14 @@ class SignupPage extends StatelessWidget {
                 children: <Widget>[
                   inputFile(label: "Username", controller: _usernameController),
                   inputFile(label: "Email", controller: _emailController),
-                  inputFile(label: "Password", obscureText: true, controller: _passwordController),
-                  inputFile(label: "Confirm Password", obscureText: true, controller: _confirmPasswordController),
+                  inputFile(
+                      label: "Password",
+                      obscureText: true,
+                      controller: _passwordController),
+                  inputFile(
+                      label: "Confirm Password",
+                      obscureText: true,
+                      controller: _confirmPasswordController),
                 ],
               ),
               Container(
@@ -113,7 +121,8 @@ class SignupPage extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    Text("Already have an account?", style: TextStyle(color: Colors.white)),
+                    Text("Already have an account?",
+                        style: TextStyle(color: Colors.white)),
                     Text(
                       " Login",
                       style: TextStyle(
@@ -139,8 +148,10 @@ class SignupPage extends StatelessWidget {
       final String password = _passwordController.text.trim();
       final String confirmPassword = _confirmPasswordController.text.trim();
 
-      if (username.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-        // Show a dialog to inform the user to fill all fields
+      if (username.isEmpty ||
+          email.isEmpty ||
+          password.isEmpty ||
+          confirmPassword.isEmpty) {
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -184,7 +195,8 @@ class SignupPage extends StatelessWidget {
         return; // Exit signUp() method
       }
 
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -205,7 +217,10 @@ class SignupPage extends StatelessWidget {
     }
   }
 
-  Widget inputFile({label, obscureText = false, required TextEditingController? controller}) {
+  Widget inputFile(
+      {label,
+      obscureText = false,
+      required TextEditingController? controller}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
