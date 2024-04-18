@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'temperature_page.dart'; // Import your temperature page file
+import 'pH.dart';
 
 class LandingPage extends StatefulWidget {
   @override
@@ -178,10 +179,18 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                   SizedBox(width: 16),
                   Expanded(
-                    child: buildSensorCard(
-                      "Ammonia",
-                      ammoniaValue,
-                      Icons.opacity,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => pH()),
+                        );
+                      },
+                      child: buildSensorCard(
+                        "pH",
+                        pHValue,
+                        Icons.whatshot,
+                      ),
                     ),
                   ),
                 ],
@@ -191,17 +200,17 @@ class _LandingPageState extends State<LandingPage> {
                 children: [
                   Expanded(
                     child: buildSensorCard(
-                      "Turbidity",
-                      turbidityValue,
-                      Icons.visibility,
+                      "Ammonia",
+                      ammoniaValue,
+                      Icons.opacity,
                     ),
                   ),
                   SizedBox(width: 16),
                   Expanded(
                     child: buildSensorCard(
-                      "pH",
-                      pHValue,
-                      Icons.whatshot,
+                      "Turbidity",
+                      turbidityValue,
+                      Icons.visibility,
                     ),
                   ),
                 ],
