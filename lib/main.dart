@@ -8,7 +8,7 @@ void main() async {
   await Firebase.initializeApp();
   runApp(MaterialApp(
     debugShowCheckedModeBanner:
-        false, // Set to false to remove the debug banner
+        false, 
     home: HomePage(),
   ));
 }
