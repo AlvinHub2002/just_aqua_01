@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'bottom_navigation_bar.dart';
 import 'LandingPage.dart';
 
@@ -12,17 +13,52 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String selectedFishType = 'Salmon';
   late DatabaseReference _fishRef;
+  late User _user; // Store the current user
+  DatabaseReference _userRef = FirebaseDatabase.instance.ref().child('users');
+  String? _userDisplayName;
+  var ph_number;
 
   @override
   void initState() {
     super.initState();
     initializeFirebase(); // Initialize Firebase
+    _fetchCurrentUser(); // Fetch current user
   }
 
   Future<void> initializeFirebase() async {
     // Initialize Firebase
     await Firebase.initializeApp();
     _fishRef = FirebaseDatabase.instance.ref().child('Fish');
+    // Initialize _userRef here
+  }
+
+  Future<void> _fetchCurrentUser() async {
+    _user = FirebaseAuth.instance.currentUser!;
+    String uid = _user.uid;
+
+    try {
+      if (_userRef != null) {
+        print(uid);
+        DataSnapshot snapshot = await _userRef.child(uid).get();
+        var userData = snapshot.value as Map?;
+        print(userData);
+        if (userData != null) {
+          String? username = userData['username'] as String?;
+          ph_number = userData['phoneNumber'];
+          print(ph_number);
+          if (username != null) {
+            await _user.updateDisplayName(username);
+            setState(() {
+              _userDisplayName = username;
+            });
+          }
+        } else {
+          print('User data is null');
+        }
+      }
+    } catch (error) {
+      print('Error fetching username: $error');
+    }
   }
 
   @override
@@ -35,160 +71,168 @@ class _ProfilePageState extends State<ProfilePage> {
         title: Text('Profile'),
         backgroundColor: Colors.black,
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(height: 20),
-          CircleAvatar(
-            radius: 60,
-            backgroundImage: AssetImage('images/ig.jpg'),
-          ),
-          SizedBox(height: 10),
-          Text(
-            'Alvin Varghese',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              fontFamily: 'Poppins',
-              color: Color.fromARGB(255, 255, 255, 255),
-            ),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {},
-            child: Text(
-              'Update Profile',
-              style: TextStyle(color: const Color.fromARGB(255, 30, 30, 30)),
-            ),
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              backgroundColor: Color.fromARGB(255, 203, 203, 203),
-            ),
-          ),
-          SizedBox(height: 100),
-          Center(
-            child: Column(
+      body: _user != null // Check if the user data is fetched
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ConstrainedBox(
-                  constraints: BoxConstraints.tightFor(width: buttonWidth),
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: Padding(
-                      padding: const EdgeInsets.only(left: 10),
-                      child: Icon(Icons.email),
-                    ),
-                    label: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'example@example.com',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      primary: Color.fromARGB(255, 21, 21, 21),
-                      minimumSize: Size(buttonWidth, 50),
-                    ),
+                SizedBox(height: 20),
+                CircleAvatar(
+                  radius: 60,
+                  backgroundImage: AssetImage('images/profile-icon.png'),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  _user.displayName ?? '', // Display user's display name
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    fontFamily: 'Poppins',
+                    color: Color.fromARGB(255, 255, 255, 255),
                   ),
                 ),
                 SizedBox(height: 20),
-                ConstrainedBox(
-                  constraints: BoxConstraints.tightFor(width: buttonWidth),
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: Padding(
-                      padding: const EdgeInsets.only(left: 10),
-                      child: Icon(Icons.phone),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: Text(
+                    'Update Profile',
+                    style:
+                        TextStyle(color: const Color.fromARGB(255, 30, 30, 30)),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    label: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Ph : 9744901994',
-                        style: TextStyle(color: Colors.white),
+                    backgroundColor: Color.fromARGB(255, 203, 203, 203),
+                  ),
+                ),
+                SizedBox(height: 100),
+                Center(
+                  child: Column(
+                    children: [
+                      ConstrainedBox(
+                        constraints:
+                            BoxConstraints.tightFor(width: buttonWidth),
+                        child: ElevatedButton.icon(
+                          onPressed: () {},
+                          icon: Padding(
+                            padding: const EdgeInsets.only(left: 10),
+                            child: Icon(Icons.email),
+                          ),
+                          label: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _user.email ?? '', // Display user's email
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            primary: Color.fromARGB(255, 21, 21, 21),
+                            minimumSize: Size(buttonWidth, 50),
+                          ),
+                        ),
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      primary: const Color.fromARGB(255, 21, 21, 21),
-                      minimumSize: Size(buttonWidth, 50),
-                    ),
+                      SizedBox(height: 20),
+                      ConstrainedBox(
+                        constraints:
+                            BoxConstraints.tightFor(width: buttonWidth),
+                        child: ElevatedButton.icon(
+                          onPressed: () {},
+                          icon: Padding(
+                            padding: const EdgeInsets.only(left: 10),
+                            child: Icon(Icons.phone),
+                          ),
+                          label: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Ph : $ph_number',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            primary: const Color.fromARGB(255, 21, 21, 21),
+                            minimumSize: Size(buttonWidth, 50),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      ConstrainedBox(
+                        constraints:
+                            BoxConstraints.tightFor(width: buttonWidth),
+                        child: ElevatedButton.icon(
+                          onPressed: () {},
+                          icon: Padding(
+                            padding: const EdgeInsets.only(left: 10),
+                            child: Icon(Icons.water),
+                          ),
+                          label: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Fish type : $selectedFishType',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              PopupMenuButton(
+                                itemBuilder: (BuildContext context) {
+                                  return <PopupMenuEntry>[
+                                    PopupMenuItem(
+                                      child: Text('Guppy'),
+                                      value: 'Guppy',
+                                    ),
+                                    PopupMenuItem(
+                                      child: Text('Goldfish'),
+                                      value: 'Goldfish',
+                                    ),
+                                    PopupMenuItem(
+                                      child: Text('Catfish'),
+                                      value: 'Catfish',
+                                    ),
+                                  ];
+                                },
+                                onSelected: (value) {
+                                  _showConfirmationDialog(value
+                                      .toString()); // Show confirmation dialog here
+                                },
+                              ),
+                            ],
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            primary: const Color.fromARGB(255, 21, 21, 21),
+                            minimumSize: Size(buttonWidth, 50),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(height: 20),
-                ConstrainedBox(
-                  constraints: BoxConstraints.tightFor(width: buttonWidth),
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: Padding(
-                      padding: const EdgeInsets.only(left: 10),
-                      child: Icon(Icons.water),
-                    ),
-                    label: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Fish type : $selectedFishType',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        PopupMenuButton(
-                          itemBuilder: (BuildContext context) {
-                            return <PopupMenuEntry>[
-                              PopupMenuItem(
-                                child: Text('Guppy'),
-                                value: 'Guppy',
-                              ),
-                              PopupMenuItem(
-                                child: Text('Goldfish'),
-                                value: 'Goldfish',
-                              ),
-                              PopupMenuItem(
-                                child: Text('Catfish'),
-                                value: 'Catfish',
-                              ),
-                            ];
-                          },
-                          onSelected: (value) {
-                            _showConfirmationDialog(value
-                                .toString()); // Show confirmation dialog here
-                          },
-                        ),
-                      ],
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      primary: const Color.fromARGB(255, 21, 21, 21),
-                      minimumSize: Size(buttonWidth, 50),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: Text(
+                    'Logout',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    primary: const Color.fromARGB(255, 21, 21, 21),
+                    minimumSize: Size(buttonWidth, 50),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
               ],
-            ),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {},
-            child: Text(
-              'Logout',
-              style: TextStyle(color: Colors.white),
-            ),
-            style: ElevatedButton.styleFrom(
-              primary: const Color.fromARGB(255, 21, 21, 21),
-              minimumSize: Size(buttonWidth, 50),
-            ),
-          ),
-          SizedBox(height: 20),
-          Expanded(
-            child: Center(
-              child: Text(
-                '',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+            )
+          : Center(
+              child:
+                  CircularProgressIndicator()), // Show loading indicator if user data is not yet fetched
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: 2,
         onTap: (index) {

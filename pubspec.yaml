@@ -31,7 +31,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase_database: ^10.0.0
+  firebase_database: ^10.4.5
   provider: ^5.0.0
 
  
@@ -69,6 +69,7 @@ flutter:
     - images/login_image.png
     - images/water.png
     - images/ig.jpg
+    - images/profile-icon.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

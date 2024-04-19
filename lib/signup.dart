@@ -19,6 +19,8 @@ class SignupPage extends StatelessWidget {
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
   TextEditingController _confirmPasswordController = TextEditingController();
+  TextEditingController _phoneNumberController =
+      TextEditingController(); // Added
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +81,9 @@ class SignupPage extends StatelessWidget {
                   inputFile(label: "Username", controller: _usernameController),
                   inputFile(label: "Email", controller: _emailController),
                   inputFile(
+                      label: "Phone Number",
+                      controller: _phoneNumberController),
+                  inputFile(
                       label: "Password",
                       obscureText: true,
                       controller: _passwordController),
@@ -86,6 +91,7 @@ class SignupPage extends StatelessWidget {
                       label: "Confirm Password",
                       obscureText: true,
                       controller: _confirmPasswordController),
+                  // Added
                 ],
               ),
               Container(
@@ -147,11 +153,13 @@ class SignupPage extends StatelessWidget {
       final String email = _emailController.text.trim();
       final String password = _passwordController.text.trim();
       final String confirmPassword = _confirmPasswordController.text.trim();
+      final String phoneNumber = _phoneNumberController.text.trim(); // Added
 
       if (username.isEmpty ||
           email.isEmpty ||
           password.isEmpty ||
-          confirmPassword.isEmpty) {
+          confirmPassword.isEmpty ||
+          phoneNumber.isEmpty) {
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -173,8 +181,6 @@ class SignupPage extends StatelessWidget {
       }
 
       if (password != confirmPassword) {
-        // Passwords don't match
-        // Handle error or display a message
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -201,15 +207,38 @@ class SignupPage extends StatelessWidget {
         password: password,
       );
 
-      // Create user in Realtime Database
       if (userCredential != null) {
         await _userRef.child(userCredential.user!.uid).set({
           'username': username,
           'email': email,
-          // You can add more fields as needed
+          'phoneNumber': phoneNumber, // Added
         });
 
-        // Navigate to the next screen or show a success message
+        // Show success dialog
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Success"),
+              content: Text("Sign up successful!"),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close dialog
+                    Navigator.pushReplacement(
+                      // Navigate to login page and remove SignupPage from stack
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LoginPage(),
+                      ),
+                    );
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
       }
     } catch (e) {
       print('Error occurred: $e');
