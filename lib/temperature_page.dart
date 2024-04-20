@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TemperaturePage extends StatefulWidget {
   @override
@@ -7,20 +8,25 @@ class TemperaturePage extends StatefulWidget {
 }
 
 class _TemperaturePageState extends State<TemperaturePage> {
-  final DatabaseReference _database = FirebaseDatabase.instance.reference();
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
+  late User _user;
+  late String _selectedFishType = '';
+  // Store the selected fish type
   double _currentTemperature = 0.0; // Initial temperature
   double _minTemperature = 0.0;
   double _maxTemperature = 100.0;
+  double _temperatureThreshold =
+      0.0; // Temperature threshold for the selected fish
 
   // Function to get the effect of current temperature
   String getTemperatureEffect(double temperature) {
     if (temperature < 10) {
       return 'Very Cold';
-    } else if (temperature < 20) {
+    } else if (temperature < _temperatureThreshold) {
       return 'Cold';
-    } else if (temperature < 30) {
+    } else if (temperature < _temperatureThreshold) {
       return 'Moderate';
-    } else if (temperature < 40) {
+    } else if (temperature < _temperatureThreshold) {
       return 'Warm';
     } else {
       return 'Hot';
@@ -30,6 +36,8 @@ class _TemperaturePageState extends State<TemperaturePage> {
   @override
   void initState() {
     super.initState();
+    _user = FirebaseAuth.instance.currentUser!;
+    _fetchSelectedFishType();
     _database.child('Temperature/Celsius').onValue.listen((event) {
       if (event.snapshot.value != null) {
         setState(() {
@@ -37,6 +45,39 @@ class _TemperaturePageState extends State<TemperaturePage> {
         });
       }
     });
+  }
+
+  // Function to fetch the selected fish type from the database
+  Future<void> _fetchSelectedFishType() async {
+    try {
+      DataSnapshot snapshot =
+          await _database.child('users/${_user.uid}/selectedFishType').get();
+      if (snapshot.value != null) {
+        setState(() {
+          _selectedFishType = snapshot.value.toString();
+          print(_selectedFishType);
+        });
+        // Fetch the temperature threshold for the selected fish
+        _fetchTemperatureThreshold();
+      }
+    } catch (error) {
+      print('Error fetching selected fish type: $error');
+    }
+  }
+
+  // Function to fetch the temperature threshold for the selected fish
+  Future<void> _fetchTemperatureThreshold() async {
+    try {
+      DataSnapshot snapshot =
+          await _database.child('Fish/$_selectedFishType/Temperature').get();
+      if (snapshot.value != null) {
+        setState(() {
+          _temperatureThreshold = double.parse(snapshot.value.toString());
+        });
+      }
+    } catch (error) {
+      print('Error fetching temperature threshold: $error');
+    }
   }
 
   @override
@@ -56,13 +97,22 @@ class _TemperaturePageState extends State<TemperaturePage> {
               child: Text(
                 'Temperature',
                 style: TextStyle(
-                  fontSize: 34.0,
+                  fontSize: 32.0,
                   fontWeight: FontWeight.bold,
                   color: Color.fromARGB(255, 175, 175, 175),
                 ),
               ),
             ),
-            SizedBox(height: 100.0),
+            SizedBox(height: 30.0),
+            Center(
+              child: Text(_selectedFishType,
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 215, 215, 215),
+                  )),
+            ),
+            SizedBox(height: 50.0),
             Center(
               child: Stack(
                 alignment: Alignment.center,
@@ -134,7 +184,26 @@ class _TemperaturePageState extends State<TemperaturePage> {
                 ),
               ),
             ),
-            SizedBox(height: 100),
+            SizedBox(height: 50),
+            Center(
+              child: Text(
+                'Maximum Temperature',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            SizedBox(height: 10.0),
+            Center(
+              child: Text('${_temperatureThreshold.toStringAsFixed(1)}°C',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 215, 215, 215),
+                  )),
+            ),
+            SizedBox(height: 50),
             Center(
               child: Container(
                 width: MediaQuery.of(context).size.width * 0.8,

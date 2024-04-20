@@ -53,7 +53,7 @@ class _ProfilePageState extends State<ProfilePage> {
             setState(() {
               _userDisplayName = username;
               selectedFishType = selectedFish ??
-                  'Salmon'; // Set default to 'Salmon' if not found
+                  'Not selected'; // Set default to 'Salmon' if not found
             });
           }
         } else {
