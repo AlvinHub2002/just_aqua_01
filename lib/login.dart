@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:just_aqua_01/signup.dart';
-import 'package:just_aqua_01/landingPage.dart';
+import 'package:just_aqua_01/LandingPage.dart';
 
 class LoginPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -10,12 +10,11 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.black, // Set background color to black
+      backgroundColor: Colors.black,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.black, // Set app bar background color to black
-        iconTheme: IconThemeData(
-            color: Colors.white), // Set the color of the icons to white
+        backgroundColor: Colors.black,
+        iconTheme: IconThemeData(color: Colors.white),
         actionsIconTheme: IconThemeData(color: Colors.white),
         leading: IconButton(
           onPressed: () {
@@ -45,17 +44,16 @@ class LoginPage extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white, // Set text color to white
+                          color: Colors.white,
                         ),
                       ),
-                      SizedBox(
-                        height: 20,
-                      ),
+                      SizedBox(height: 20),
                       Text(
                         "Login to your account",
                         style: TextStyle(
-                            fontSize: 15,
-                            color: Colors.grey[600]), // Set text color to white
+                          fontSize: 15,
+                          color: Colors.grey[600],
+                        ),
                       )
                     ],
                   ),
@@ -77,20 +75,19 @@ class LoginPage extends StatelessWidget {
                         height: 60,
                         onPressed: () async {
                           // Get values from text fields
-                          String enteredEmail =
-                              emailController.text.trim(); // Trim whitespace
+                          String enteredEmail = emailController.text.trim();
                           String enteredPassword =
-                              passwordController.text.trim(); // Trim whitespace
+                              passwordController.text.trim();
 
                           // Check if email and password are not empty
                           if (enteredEmail.isEmpty || enteredPassword.isEmpty) {
-                            // Show popup alert
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
                                   title: Text("Error"),
-                                  content: Text("Please enter both email and password."),
+                                  content: Text(
+                                      "Please enter both email and password."),
                                   actions: [
                                     TextButton(
                                       onPressed: () {
@@ -102,7 +99,7 @@ class LoginPage extends StatelessWidget {
                                 );
                               },
                             );
-                            return; // Exit the onPressed callback
+                            return;
                           }
 
                           try {
@@ -112,25 +109,23 @@ class LoginPage extends StatelessWidget {
                               password: enteredPassword,
                             );
 
-                            // Check if the authentication is successful
                             if (userCredential.user != null) {
-                              // Authentication successful, navigate to the landing page
-                              Navigator.push(
+                              // After successful login
+                              Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => LandingPage(),
                                 ),
                               );
                             } else {
-                              // Authentication failed
                               print('Invalid email or password');
-                              // Show popup alert
                               showDialog(
                                 context: context,
                                 builder: (BuildContext context) {
                                   return AlertDialog(
                                     title: Text("Error"),
-                                    content: Text("Wrong Credentials, Please check Email/Password"),
+                                    content: Text(
+                                        "Wrong Credentials, Please check Email/Password"),
                                     actions: [
                                       TextButton(
                                         onPressed: () {
@@ -142,20 +137,19 @@ class LoginPage extends StatelessWidget {
                                   );
                                 },
                               );
-                              // Clear input fields
                               emailController.clear();
                               passwordController.clear();
                             }
                           } catch (e) {
-                            // Handle authentication errors
-                            print('Wrong Credentials, Please check Email/Password: $e');
-                            // Show popup alert
+                            print(
+                                'Wrong Credentials, Please check Email/Password: $e');
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
                                   title: Text("Error"),
-                                  content: Text("Wrong Credentials, Please check Email/Password"),
+                                  content: Text(
+                                      "Wrong Credentials, Please check Email/Password"),
                                   actions: [
                                     TextButton(
                                       onPressed: () {
@@ -167,7 +161,6 @@ class LoginPage extends StatelessWidget {
                                 );
                               },
                             );
-                            // Clear input fields
                             emailController.clear();
                             passwordController.clear();
                           }
@@ -201,15 +194,13 @@ class LoginPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
                         Text("Don't have an account?",
-                            style: TextStyle(
-                                color: Colors
-                                    .grey[600])), // Set text color to white
+                            style: TextStyle(color: Colors.grey[600])),
                         Text(
                           " Sign up",
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 18,
-                            color: Colors.blue, // Set text color to white
+                            color: Colors.blue,
                           ),
                         )
                       ],
@@ -235,7 +226,6 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-// Widget for text field
 Widget inputFile({label, obscureText = false}) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,7 +249,7 @@ Widget inputFile({label, obscureText = false}) {
           contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.grey[400] ?? Colors.grey),
-            borderRadius: BorderRadius.circular(13), // Set border radius
+            borderRadius: BorderRadius.circular(13),
           ),
           border: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.grey[400] ?? Colors.grey),

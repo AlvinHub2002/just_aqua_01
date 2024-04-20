@@ -4,6 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'bottom_navigation_bar.dart';
 import 'LandingPage.dart';
+import 'login.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -11,7 +12,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String selectedFishType = 'Salmon';
+  String selectedFishType = '';
   late DatabaseReference _fishRef;
   late User _user; // Store the current user
   DatabaseReference _userRef = FirebaseDatabase.instance.ref().child('users');
@@ -45,11 +46,14 @@ class _ProfilePageState extends State<ProfilePage> {
         if (userData != null) {
           String? username = userData['username'] as String?;
           ph_number = userData['phoneNumber'];
+          String? selectedFish = userData['selectedFishType'] as String?;
           print(ph_number);
           if (username != null) {
             await _user.updateDisplayName(username);
             setState(() {
               _userDisplayName = username;
+              selectedFishType = selectedFish ??
+                  'Salmon'; // Set default to 'Salmon' if not found
             });
           }
         } else {
@@ -206,7 +210,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    _signOut();
+                  },
                   child: Text(
                     'Logout',
                     style: TextStyle(color: Colors.white),
@@ -279,7 +285,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Text('Cancel'),
                   ),
                   TextButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      // Update the selected fish type in the user's data
+                      await _userRef.child(_user.uid).update({
+                        'selectedFishType': newValue,
+                      });
                       setState(() {
                         selectedFishType = newValue;
                       });
@@ -299,6 +309,19 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (e) {
       print('Error fetching data: $e');
+    }
+  }
+
+  void _signOut() async {
+    try {
+      await FirebaseAuth.instance.signOut(); // Sign out the user
+      Navigator.pushReplacement(
+        // Navigate to the login page
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    } catch (e) {
+      print('Error signing out: $e');
     }
   }
 }

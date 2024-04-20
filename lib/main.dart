@@ -1,16 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:just_aqua_01/login.dart';
 import 'package:just_aqua_01/signup.dart';
+import 'package:just_aqua_01/LandingPage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner:
-        false, 
-    home: HomePage(),
-  ));
+
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: FutureBuilder(
+        // Check if user is already signed in
+        future: FirebaseAuth.instance.authStateChanges().first,
+        builder: (BuildContext context, AsyncSnapshot<User?> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return CircularProgressIndicator(); // Show loading indicator while checking authentication state
+          }
+          if (snapshot.hasData) {
+            return LandingPage(); // If user is already logged in, navigate to landing page
+          }
+          return HomePage(); // If no user is logged in, show home page with login/signup options
+        },
+      ),
+    );
+  }
 }
 
 class HomePage extends StatelessWidget {

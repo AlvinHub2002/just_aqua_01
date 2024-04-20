@@ -323,9 +323,3 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 }
-
-void main() {
-  runApp(MaterialApp(
-    home: LandingPage(),
-  ));
-}
