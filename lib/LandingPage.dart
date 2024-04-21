@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'temperature_page.dart';
 import 'profilePage.dart';
-import 'bottom_navigation_bar.dart'; // Import the bottom navigation bar
-import 'temperature_page.dart'; // Import your temperature page file
-import 'pH.dart';
+import 'bottom_navigation_bar.dart';
 
-bool _fishTypeSelected = false; // Add this variable
+bool _fishTypeSelected = false;
 
 class LandingPage extends StatefulWidget {
   @override
@@ -19,18 +19,41 @@ class _LandingPageState extends State<LandingPage> {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
   int _currentIndex = 0;
   late User _user;
-
   String temperatureValue = '';
   String ammoniaValue = '';
   String turbidityValue = '';
   String pHValue = '';
-  String _selectedFishType = ''; // Store the selected fish type
+  String _selectedFishType = '';
+  double _temperatureThreshold = 0.0;
+  bool _temperatureExceeded = true;
+  bool _initialLoad = true;
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
     super.initState();
     _user = FirebaseAuth.instance.currentUser!;
     _checkFishTypeSelection();
+    _initializeLocalNotifications();
+    _requestNotificationPermissions();
+  }
+
+  void _initializeLocalNotifications() {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  Future<void> _requestNotificationPermissions() async {
+    final PermissionStatus status = await Permission.notification.request();
+    if (status.isGranted) {
+      print('Notification permissions granted');
+    } else {
+      print('Notification permissions denied');
+    }
   }
 
   void _checkFishTypeSelection() {
@@ -43,8 +66,11 @@ class _LandingPageState extends State<LandingPage> {
         _fishTypeSelected = false;
       } else {
         setState(() {
-          _fishTypeSelected = true; // Fish type is selected
+          _fishTypeSelected = true;
         });
+        _selectedFishType = snapshot.value.toString();
+        print(_selectedFishType);
+        _fetchTemperatureThreshold();
         _fetchRealtimeData();
       }
     });
@@ -84,6 +110,12 @@ class _LandingPageState extends State<LandingPage> {
       if (snapshot.value != null) {
         setState(() {
           temperatureValue = snapshot.value.toString();
+          if (_initialLoad) {
+            _initialLoad = false;
+            _temperatureExceeded = false;
+          } else {
+            _checkTemperatureExceeded(double.parse(temperatureValue));
+          }
         });
       }
     });
@@ -111,23 +143,74 @@ class _LandingPageState extends State<LandingPage> {
         });
       }
     });
-    _fetchSelectedFishType(); // Fetch the selected fish type
   }
 
-  // Function to fetch the selected fish type from the database
-  Future<void> _fetchSelectedFishType() async {
+  Future<void> _fetchTemperatureThreshold() async {
     try {
       DataSnapshot snapshot =
-          await _database.child('users/${_user.uid}/selectedFishType').get();
+          await _database.child('Fish/$_selectedFishType/Temperature').get();
       if (snapshot.value != null) {
         setState(() {
-          _selectedFishType = snapshot.value.toString();
-          print(_selectedFishType);
+          _temperatureThreshold = double.parse(snapshot.value.toString());
+          print(_temperatureThreshold);
         });
       }
     } catch (error) {
-      print('Error fetching selected fish type: $error');
+      print('Error fetching temperature threshold: $error');
     }
+  }
+
+  void _showTemperatureAlert() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.yellow),
+            SizedBox(width: 10),
+            Text(
+              'Temperature exceeds threshold!',
+              style: TextStyle(color: Colors.yellow),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _checkTemperatureExceeded(double currentTemperature) {
+    bool previouslyExceeded = _temperatureExceeded;
+
+    setState(() {
+      _temperatureExceeded = currentTemperature > _temperatureThreshold;
+    });
+
+    if (_temperatureExceeded && !previouslyExceeded) {
+      _showTemperatureAlert();
+      _showTemperatureNotification();
+    } else if (!_temperatureExceeded && previouslyExceeded) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    }
+  }
+
+  Future<void> _showTemperatureNotification() async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'Temperature Alert',
+      'Notifications for temperature alerts',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+    );
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+      1,
+      'Temperature Alert!',
+      'Temperature has exceeded ${_temperatureThreshold} °C',
+      platformChannelSpecifics,
+    );
   }
 
   @override
@@ -147,7 +230,7 @@ class _LandingPageState extends State<LandingPage> {
           ],
         ),
         actions: [
-          if (!_fishTypeSelected) // Conditionally render the warning icon
+          if (!_fishTypeSelected)
             IconButton(
               icon: Icon(Icons.warning),
               onPressed: () {
@@ -182,7 +265,6 @@ class _LandingPageState extends State<LandingPage> {
             _currentIndex = index;
           });
           if (index == 2) {
-            // Profile button index
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => ProfilePage()),
@@ -216,16 +298,6 @@ class _LandingPageState extends State<LandingPage> {
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
-            ),
-            // Display the selected fish type here
-            SizedBox(height: 20),
-            Center(
-              child: Text(_selectedFishType,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 215, 215, 215),
-                  )),
             ),
             SizedBox(height: 20),
             Container(
@@ -290,12 +362,22 @@ class _LandingPageState extends State<LandingPage> {
                 color: Color.fromARGB(255, 162, 162, 162),
               ),
             ),
+            SizedBox(height: 20),
+            Center(
+              child: Text(_selectedFishType,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 215, 215, 215),
+                  )),
+            ),
             SizedBox(height: 20.0),
             Row(
               children: [
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
+                      _showTemperatureNotification();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -306,7 +388,7 @@ class _LandingPageState extends State<LandingPage> {
                       "Temperature",
                       temperatureValue,
                       Icons.thermostat,
-                      "°C", // Celsius
+                      "°C",
                     ),
                   ),
                 ),
@@ -316,7 +398,7 @@ class _LandingPageState extends State<LandingPage> {
                     "Ammonia",
                     ammoniaValue,
                     Icons.opacity,
-                    "mg/L", // milligrams per liter
+                    "mg/L",
                   ),
                 ),
               ],
@@ -329,7 +411,7 @@ class _LandingPageState extends State<LandingPage> {
                     "Turbidity",
                     turbidityValue,
                     Icons.visibility,
-                    "NTU", // Nephelometric Turbidity Units
+                    "NTU",
                   ),
                 ),
                 SizedBox(width: 16),
@@ -338,7 +420,7 @@ class _LandingPageState extends State<LandingPage> {
                     "pH",
                     pHValue,
                     Icons.whatshot,
-                    "", // pH is dimensionless, no unit needed
+                    "",
                   ),
                 ),
               ],
@@ -351,8 +433,18 @@ class _LandingPageState extends State<LandingPage> {
 
   Widget buildSensorCard(
       String sensorName, String sensorValue, IconData iconData, String unit) {
+    Color cardColor = Color.fromARGB(70, 66, 66, 66);
+    if (sensorName == 'Temperature' &&
+        double.tryParse(sensorValue) != null &&
+        _selectedFishType.isNotEmpty) {
+      double currentTemperature = double.parse(sensorValue);
+      if (currentTemperature > _temperatureThreshold) {
+        cardColor = Colors.red;
+      }
+    }
+
     return Card(
-      color: Color.fromARGB(70, 66, 66, 66),
+      color: cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
@@ -421,4 +513,10 @@ class _LandingPageState extends State<LandingPage> {
       ),
     );
   }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: LandingPage(),
+  ));
 }

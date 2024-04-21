@@ -130,7 +130,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            primary: Color.fromARGB(255, 21, 21, 21),
+                            backgroundColor: Color.fromARGB(255, 21, 21, 21),
                             minimumSize: Size(buttonWidth, 50),
                           ),
                         ),
@@ -153,7 +153,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            primary: const Color.fromARGB(255, 21, 21, 21),
+                            backgroundColor:
+                                const Color.fromARGB(255, 21, 21, 21),
                             minimumSize: Size(buttonWidth, 50),
                           ),
                         ),
@@ -200,7 +201,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ],
                           ),
                           style: ElevatedButton.styleFrom(
-                            primary: const Color.fromARGB(255, 21, 21, 21),
+                            backgroundColor:
+                                const Color.fromARGB(255, 21, 21, 21),
                             minimumSize: Size(buttonWidth, 50),
                           ),
                         ),
@@ -218,7 +220,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     style: TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    primary: const Color.fromARGB(255, 21, 21, 21),
+                    backgroundColor: const Color.fromARGB(255, 21, 21, 21),
                     minimumSize: Size(buttonWidth, 50),
                   ),
                 ),
