@@ -19,19 +19,19 @@ class _TemperaturePageState extends State<TemperaturePage> {
       0.0; // Temperature threshold for the selected fish
 
   // Function to get the effect of current temperature
-  String getTemperatureEffect(double temperature) {
-    if (temperature < 10) {
-      return 'Very Cold';
-    } else if (temperature < _temperatureThreshold) {
-      return 'Cold';
-    } else if (temperature < _temperatureThreshold) {
-      return 'Moderate';
-    } else if (temperature < _temperatureThreshold) {
-      return 'Warm';
-    } else {
-      return 'Hot';
-    }
-  }
+  // String getTemperatureEffect(double temperature) {
+  //   if (temperature < 10) {
+  //     return 'Very Cold';
+  //   } else if (temperature < _temperatureThreshold) {
+  //     return 'Cold';
+  //   } else if (temperature < _temperatureThreshold) {
+  //     return 'Moderate';
+  //   } else if (temperature < _temperatureThreshold) {
+  //     return 'Warm';
+  //   } else {
+  //     return 'Hot';
+  //   }
+  // }
 
   @override
   void initState() {
@@ -77,6 +77,16 @@ class _TemperaturePageState extends State<TemperaturePage> {
       }
     } catch (error) {
       print('Error fetching temperature threshold: $error');
+    }
+  }
+
+  String getTemperatureMessage() {
+    if (_currentTemperature >= _temperatureThreshold) {
+      return 'Temperature is higher for $_selectedFishType. Take action to lower it !';
+    } else if (_currentTemperature < _temperatureThreshold - 10) {
+      return 'Temperature is lower for $_selectedFishType. Take action to increase it !';
+    } else {
+      return 'Temperature is within the acceptable range.';
     }
   }
 
@@ -172,22 +182,32 @@ class _TemperaturePageState extends State<TemperaturePage> {
                 ],
               ),
             ),
-            SizedBox(height: 20),
-            Center(
-              child: Text(
-                getTemperatureEffect(_currentTemperature),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            // SizedBox(height: 20),
+            // Center(
+            //   child: Text(
+            //     getTemperatureEffect(_currentTemperature),
+            //     textAlign: TextAlign.center,
+            //     style: TextStyle(
+            //       fontSize: 20,
+            //       color: Colors.white,
+            //       fontWeight: FontWeight.bold,
+            //     ),
+            //   ),
+            // ),
             SizedBox(height: 50),
             Center(
               child: Text(
                 'Maximum Temperature',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            SizedBox(height: 5),
+            Center(
+              child: Text(
+                'Good for $_selectedFishType',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white,
@@ -217,7 +237,7 @@ class _TemperaturePageState extends State<TemperaturePage> {
                           Color.fromARGB(255, 203, 203, 203).withOpacity(0.5)),
                 ),
                 child: Text(
-                  'Current temperature is good for the fish. ',
+                  getTemperatureMessage(),
                   // textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
