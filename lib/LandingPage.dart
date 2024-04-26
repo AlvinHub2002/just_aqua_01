@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'temperature_page.dart';
 import 'profilePage.dart';
 import 'bottom_navigation_bar.dart'; // Import the bottom navigation bar
 import 'temperature_page.dart'; // Import your temperature page file
-import 'pH.dart';
 
 class LandingPage extends StatefulWidget {
   @override

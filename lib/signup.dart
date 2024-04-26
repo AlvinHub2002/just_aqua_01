@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:just_aqua_01/login.dart';
+import 'LandingPage.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -209,7 +210,36 @@ class SignupPage extends StatelessWidget {
           // You can add more fields as needed
         });
 
-        // Navigate to the next screen or show a success message
+        // Show success message
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Success"),
+              content: Text("New user created."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+
+        // Clear input fields
+        _usernameController.clear();
+        _emailController.clear();
+        _passwordController.clear();
+        _confirmPasswordController.clear();
+
+        // Navigate to LandingPage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LandingPage()),
+        );
       }
     } catch (e) {
       print('Error occurred: $e');
