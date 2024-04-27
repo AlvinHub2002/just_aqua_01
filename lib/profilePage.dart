@@ -48,14 +48,21 @@ class _ProfilePageState extends State<ProfilePage> {
           String? username = userData['username'] as String?;
           ph_number = userData['phoneNumber'];
           String? selectedFish = userData['selectedFishType'] as String?;
-          print(ph_number);
+
+          // Check if the user has logged in using Google
+          if (_user.providerData[0].providerId == 'google.com') {
+            // If logged in using Google, use Google display name
+            username = _user.displayName;
+            print(_user.displayName);
+          }
+
           if (username != null) {
             await _user.updateDisplayName(username);
             setState(() {
               _userDisplayName = username;
-              selectedFishType = selectedFish ??
-                  'Not selected'; // Set default to 'Salmon' if not found
+              selectedFishType = selectedFish ?? 'Not selected';
             });
+            print(selectedFishType);
           }
         } else {
           print('User data is null');
@@ -113,7 +120,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     backgroundColor: Color.fromARGB(255, 203, 203, 203),
                   ),
                 ),
-                SizedBox(height: 100),
+                SizedBox(height: 60),
                 Center(
                   child: Column(
                     children: [

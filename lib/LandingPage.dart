@@ -5,6 +5,9 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:mailer/mailer.dart' as mailer;
+import 'package:mailer/smtp_server.dart';
+import 'package:mailer/smtp_server/gmail.dart';
 
 import 'notificationPage.dart';
 import 'temperature_page.dart';
@@ -29,7 +32,7 @@ class _LandingPageState extends State<LandingPage> {
   String pHValue = '';
   String _selectedFishType = '';
   double _temperatureThreshold = 0.0;
-  bool _temperatureExceeded = true;
+  bool _temperatureExceeded = false;
   bool _initialLoad = true;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -184,6 +187,26 @@ class _LandingPageState extends State<LandingPage> {
     }
   }
 
+  void _checkTemperatureExceeded(double currentTemperature) {
+    bool previouslyExceeded = _temperatureExceeded;
+
+    setState(() {
+      _temperatureExceeded = currentTemperature > _temperatureThreshold;
+    });
+
+    if (_temperatureExceeded && !previouslyExceeded) {
+      _showTemperatureAlert();
+      _showTemperatureNotification(
+        'Temperature Alert!',
+        'Temperature has exceeded ',
+      );
+      _storeTempNotification('Temperature Alert!', 'Temperature has exceeded ');
+      // Call the sendEmail function here
+    } else if (!_temperatureExceeded && previouslyExceeded) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    }
+  }
+
   void _showTemperatureAlert() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -200,24 +223,6 @@ class _LandingPageState extends State<LandingPage> {
         backgroundColor: Colors.red,
       ),
     );
-  }
-
-  void _checkTemperatureExceeded(double currentTemperature) {
-    bool previouslyExceeded = _temperatureExceeded;
-
-    setState(() {
-      _temperatureExceeded = currentTemperature > _temperatureThreshold;
-    });
-
-    if (_temperatureExceeded && !previouslyExceeded) {
-      _showTemperatureAlert();
-      _showTemperatureNotification(
-        'Temperature Alert!',
-        'Temperature has exceeded ',
-      );
-    } else if (!_temperatureExceeded && previouslyExceeded) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    }
   }
 
   Future<void> _showTemperatureNotification(String title, String body) async {
@@ -240,6 +245,9 @@ class _LandingPageState extends State<LandingPage> {
     );
 
     // Store the notification in Firebase Realtime Database under the user's ID
+  }
+
+  Future<void> _storeTempNotification(String title, String body) async {
     try {
       final databaseReference = FirebaseDatabase.instance.ref();
       final user = FirebaseAuth.instance.currentUser;
@@ -490,100 +498,99 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget buildSensorCard(
-  String sensorName, String sensorValue, IconData iconData, String unit) {
-  Color cardColor = Color.fromARGB(70, 66, 66, 66);
-  VoidCallback? onTapHandler;
+      String sensorName, String sensorValue, IconData iconData, String unit) {
+    Color cardColor = Color.fromARGB(70, 66, 66, 66);
+    VoidCallback? onTapHandler;
 
-  if (sensorName == 'Temperature') {
-    onTapHandler = () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => TemperaturePage()),
-      );
-    };
-  } else if (sensorName == 'Turbidity') {
-    onTapHandler = () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => TurbidityPage()),
-      );
-    };
-  }
-
-  if (sensorName == 'Temperature' &&
-      double.tryParse(sensorValue) != null &&
-      _selectedFishType.isNotEmpty) {
-    double currentTemperature = double.parse(sensorValue);
-    if (currentTemperature > _temperatureThreshold) {
-      cardColor = Colors.red;
+    if (sensorName == 'Temperature') {
+      onTapHandler = () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => TemperaturePage()),
+        );
+      };
+    } else if (sensorName == 'Turbidity') {
+      onTapHandler = () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => TurbidityPage()),
+        );
+      };
     }
-  }
 
-  return GestureDetector(
-    onTap: onTapHandler,
-    child: Card(
-      color: cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Container(
-        constraints: BoxConstraints(minHeight: 150),
-        child: Padding(
-          padding: const EdgeInsets.all(17),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: Icon(
-                  iconData,
-                  color: Colors.white,
+    if (sensorName == 'Temperature' &&
+        double.tryParse(sensorValue) != null &&
+        _selectedFishType.isNotEmpty) {
+      double currentTemperature = double.parse(sensorValue);
+      if (currentTemperature > _temperatureThreshold) {
+        cardColor = Colors.red;
+      }
+    }
+
+    return GestureDetector(
+      onTap: onTapHandler,
+      child: Card(
+        color: cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Container(
+          constraints: BoxConstraints(minHeight: 150),
+          child: Padding(
+            padding: const EdgeInsets.all(17),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Icon(
+                    iconData,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    sensorName,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 255, 255, 255),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      sensorName,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 255, 255, 255),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  Text(
-                    sensorValue,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 177, 177, 177),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Row(
+                  children: [
+                    Text(
+                      sensorValue,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 177, 177, 177),
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 5),
-                  Text(
-                    unit,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 177, 177, 177),
+                    SizedBox(width: 5),
+                    Text(
+                      unit,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 177, 177, 177),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget buildProfileContent() {
     return SingleChildScrollView(

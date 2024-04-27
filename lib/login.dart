@@ -1,10 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // Import GoogleSignIn
 import 'package:just_aqua_01/signup.dart';
 import 'package:just_aqua_01/LandingPage.dart';
+import 'package:flutter_signin_button/flutter_signin_button.dart'; // Import GoogleSignInButton
+import 'package:flutter_signin_button/flutter_signin_button.dart';
 
 class LoginPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn googleSignIn =
+      GoogleSignIn(); // Create an instance of GoogleSignIn
+
+  _signInWithGoogle(BuildContext context) async {
+    try {
+      await googleSignIn.signOut();
+
+      GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser != null) {
+        GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        UserCredential userCredential =
+            await _auth.signInWithCredential(credential);
+
+        if (userCredential.user != null) {
+          // After successful login
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LandingPage(),
+            ),
+          );
+        }
+
+        print(userCredential.user?.displayName);
+      } else {
+        // Handle sign-in cancellation
+      }
+    } catch (e) {
+      // Handle sign-in errors
+      print('Error signing in with Google: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +57,7 @@ class LoginPage extends StatelessWidget {
         actionsIconTheme: IconThemeData(color: Colors.white),
         leading: IconButton(
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.popUntil(context, ModalRoute.withName('/'));
           },
           icon: Icon(
             Icons.arrow_back_ios,
@@ -181,6 +220,28 @@ class LoginPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  SignInButton(
+                    Buttons.Google,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    onPressed: () async {
+                      UserCredential? userCredential =
+                          await _signInWithGoogle(context);
+                      if (userCredential != null) {
+                        // Navigate to the landing page after successful login
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LandingPage(),
+                          ),
+                        );
+                      } else {
+                        // Handle sign-in failure
+                      }
+                    },
+                    text: "Sign in with Google",
+                  ),
                   InkWell(
                     onTap: () {
                       Navigator.push(
@@ -209,12 +270,12 @@ class LoginPage extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.only(top: 100),
                     height: 200,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(""),
-                        fit: BoxFit.fitHeight,
-                      ),
-                    ),
+                    // decoration: BoxDecoration(
+                    //   image: DecorationImage(
+                    //     image: AssetImage(""),
+                    //     fit: BoxFit.fitHeight,
+                    //   ),
+                    // ),
                   )
                 ],
               ),

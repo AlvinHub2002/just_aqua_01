@@ -20,6 +20,22 @@ class NotificationPage extends StatelessWidget {
             fontSize: 26,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              // Mark all notifications as read
+              FirebaseDatabase.instance
+                  .reference()
+                  .child('users')
+                  .child(FirebaseAuth.instance.currentUser!.uid)
+                  .child('notifications')
+                  .remove();
+            },
+            icon: Icon(Icons.check_circle_outline_sharp),
+            color: Colors.blue,
+            iconSize: 28.0,
+          ),
+        ],
       ),
       backgroundColor: Colors.black,
       body: Padding(
