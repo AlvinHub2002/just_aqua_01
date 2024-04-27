@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:just_aqua_01/notificationPage.dart';
 import 'bottom_navigation_bar.dart';
 import 'LandingPage.dart';
 import 'login.dart';
@@ -72,17 +73,20 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 0, 0, 0),
       appBar: AppBar(
-        title: Text('Profile'),
+        title: Text(
+          'Profile',
+          style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+        ),
         backgroundColor: Colors.black,
       ),
       body: _user != null // Check if the user data is fetched
           ? Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: 20),
+                SizedBox(height: 50),
                 CircleAvatar(
                   radius: 60,
-                  backgroundImage: AssetImage('images/profile-icon.png'),
+                  backgroundImage: AssetImage('images/profile_icon.png'),
                 ),
                 SizedBox(height: 10),
                 Text(
@@ -248,6 +252,11 @@ class _ProfilePageState extends State<ProfilePage> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => LandingPage()),
+            );
+          } else if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NotificationPage()),
             );
           }
         },

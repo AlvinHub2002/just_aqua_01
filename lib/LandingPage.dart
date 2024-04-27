@@ -4,7 +4,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
+import 'notificationPage.dart';
 import 'temperature_page.dart';
 import 'profilePage.dart';
 import 'bottom_navigation_bar.dart';
@@ -31,6 +33,7 @@ class _LandingPageState extends State<LandingPage> {
   bool _initialLoad = true;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   @override
   void initState() {
@@ -39,6 +42,7 @@ class _LandingPageState extends State<LandingPage> {
     _checkFishTypeSelection();
     _initializeLocalNotifications();
     _requestNotificationPermissions();
+    _configureFirebaseMessaging();
   }
 
   void _initializeLocalNotifications() {
@@ -56,6 +60,24 @@ class _LandingPageState extends State<LandingPage> {
     } else {
       print('Notification permissions denied');
     }
+  }
+
+  Future<void> _firebaseMessagingBackgroundHandler(
+      RemoteMessage message) async {
+    print('Background message received: ${message.data}');
+    // Handle background message here...
+  }
+
+  void _configureFirebaseMessaging() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Foreground message received: ${message.data}');
+      if (message.notification != null) {
+        _showTemperatureNotification(message.notification!.title ?? '',
+            message.notification!.body ?? '');
+      }
+    });
+
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }
 
   void _checkFishTypeSelection() {
@@ -170,7 +192,7 @@ class _LandingPageState extends State<LandingPage> {
             Icon(Icons.warning, color: Colors.yellow),
             SizedBox(width: 10),
             Text(
-              'Temperature exceeds threshold!',
+              'Temperature exceeded threshold!',
               style: TextStyle(color: Colors.yellow),
             ),
           ],
@@ -189,13 +211,16 @@ class _LandingPageState extends State<LandingPage> {
 
     if (_temperatureExceeded && !previouslyExceeded) {
       _showTemperatureAlert();
-      _showTemperatureNotification();
+      _showTemperatureNotification(
+        'Temperature Alert!',
+        'Temperature has exceeded ',
+      );
     } else if (!_temperatureExceeded && previouslyExceeded) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
     }
   }
 
-  Future<void> _showTemperatureNotification() async {
+  Future<void> _showTemperatureNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'Temperature Alert',
@@ -209,10 +234,33 @@ class _LandingPageState extends State<LandingPage> {
 
     await flutterLocalNotificationsPlugin.show(
       1,
-      'Temperature Alert!',
-      'Temperature has exceeded ${_temperatureThreshold} °C',
+      title,
+      '$body  $_temperatureThreshold °C',
       platformChannelSpecifics,
     );
+
+    // Store the notification in Firebase Realtime Database under the user's ID
+    try {
+      final databaseReference = FirebaseDatabase.instance.ref();
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await databaseReference
+            .child('users')
+            .child(user.uid)
+            .child('notifications')
+            .push()
+            .set({
+          'title': title,
+          'body': '$body  $_temperatureThreshold °C',
+          'timestamp': ServerValue.timestamp,
+        });
+        print('Notification stored successfully');
+      } else {
+        print('Error: Current user is null');
+      }
+    } catch (error) {
+      print('Error storing notification: $error');
+    }
   }
 
   @override
@@ -270,6 +318,11 @@ class _LandingPageState extends State<LandingPage> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => ProfilePage()),
+            );
+          } else if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NotificationPage()),
             );
           }
         },
@@ -379,7 +432,10 @@ class _LandingPageState extends State<LandingPage> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
-                      // _showTemperatureNotification();
+                      _showTemperatureNotification(
+                        'Temperature Alert',
+                        'Temperature has exceeded ',
+                      );
                       Navigator.push(
                         context,
                         MaterialPageRoute(
