@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:just_aqua_01/Turbidity_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,6 +19,7 @@ class LandingPage extends StatefulWidget {
 class _LandingPageState extends State<LandingPage> {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
   int _currentIndex = 0;
+
   late User _user;
   String temperatureValue = '';
   String ammoniaValue = '';
@@ -377,7 +379,7 @@ class _LandingPageState extends State<LandingPage> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
-                      _showTemperatureNotification();
+                      // _showTemperatureNotification();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -432,18 +434,38 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget buildSensorCard(
-      String sensorName, String sensorValue, IconData iconData, String unit) {
-    Color cardColor = Color.fromARGB(70, 66, 66, 66);
-    if (sensorName == 'Temperature' &&
-        double.tryParse(sensorValue) != null &&
-        _selectedFishType.isNotEmpty) {
-      double currentTemperature = double.parse(sensorValue);
-      if (currentTemperature > _temperatureThreshold) {
-        cardColor = Colors.red;
-      }
-    }
+  String sensorName, String sensorValue, IconData iconData, String unit) {
+  Color cardColor = Color.fromARGB(70, 66, 66, 66);
+  VoidCallback? onTapHandler;
 
-    return Card(
+  if (sensorName == 'Temperature') {
+    onTapHandler = () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => TemperaturePage()),
+      );
+    };
+  } else if (sensorName == 'Turbidity') {
+    onTapHandler = () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => TurbidityPage()),
+      );
+    };
+  }
+
+  if (sensorName == 'Temperature' &&
+      double.tryParse(sensorValue) != null &&
+      _selectedFishType.isNotEmpty) {
+    double currentTemperature = double.parse(sensorValue);
+    if (currentTemperature > _temperatureThreshold) {
+      cardColor = Colors.red;
+    }
+  }
+
+  return GestureDetector(
+    onTap: onTapHandler,
+    child: Card(
       color: cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
@@ -502,8 +524,10 @@ class _LandingPageState extends State<LandingPage> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget buildProfileContent() {
     return SingleChildScrollView(
