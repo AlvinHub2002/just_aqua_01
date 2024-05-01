@@ -2,32 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class Ph extends StatefulWidget {
+class AmmoniaPage extends StatefulWidget {
   @override
-  _PhPageState createState() => _PhPageState();
+  _AmmoniaPageState createState() => _AmmoniaPageState();
 }
 
-class _PhPageState extends State<Ph> {
+class _AmmoniaPageState extends State<AmmoniaPage> {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
   late User _user;
   late String _selectedFishType = '';
-  double _currentPh = 0.0;
-  double updatedph = 0.0; // Initial pH
-  double _minPh = 0.0;
-  double _maxPh = 14.0;
-  double _phThreshold = 0.0; // pH threshold for the selected fish
+  double _currentAmmonia = 0.0; // Initial ammonia level
+  double _minAmmonia = 0.0;
+  double _maxAmmonia = 10.0;
+  double _ammoniaThreshold = 0.0; // Ammonia threshold for the selected fish
 
   @override
   void initState() {
     super.initState();
     _user = FirebaseAuth.instance.currentUser!;
     _fetchSelectedFishType();
-    _database.child('PH/Value').onValue.listen((event) {
+    _database.child('Ammonia/Concentration').onValue.listen((event) {
       if (event.snapshot.value != null) {
         setState(() {
-          _currentPh = double.parse(event.snapshot.value.toString());
-          updatedph = _currentPh - 4.75;
-          // print(_currentPh);
+          _currentAmmonia = double.parse(event.snapshot.value.toString());
+          print(_currentAmmonia);
         });
       }
     });
@@ -41,34 +39,32 @@ class _PhPageState extends State<Ph> {
         setState(() {
           _selectedFishType = snapshot.value.toString();
         });
-        _fetchPhThreshold();
+        _fetchAmmoniaThreshold();
       }
     } catch (error) {
       print('Error fetching selected fish type: $error');
     }
   }
 
-  Future<void> _fetchPhThreshold() async {
+  Future<void> _fetchAmmoniaThreshold() async {
     try {
       DataSnapshot snapshot =
-          await _database.child('Fish/$_selectedFishType/pH').get();
+          await _database.child('Fish/$_selectedFishType/Ammonia').get();
       if (snapshot.value != null) {
         setState(() {
-          _phThreshold = double.parse(snapshot.value.toString());
+          _ammoniaThreshold = double.parse(snapshot.value.toString());
         });
       }
     } catch (error) {
-      print('Error fetching pH threshold: $error');
+      print('Error fetching ammonia threshold: $error');
     }
   }
 
-  String getPhMessage() {
-    if (_currentPh >= _phThreshold) {
-      return 'pH is higher for $_selectedFishType. Take action to lower it!';
-    } else if (_currentPh < _phThreshold - 1) {
-      return 'pH is lower for $_selectedFishType. Take action to increase it!';
+  String getAmmoniaMessage() {
+    if (_currentAmmonia >= _ammoniaThreshold) {
+      return 'Ammonia level is higher for $_selectedFishType. Take action to lower it !';
     } else {
-      return 'pH is within the acceptable range.';
+      return 'Ammonia level is within the acceptable range.';
     }
   }
 
@@ -87,7 +83,7 @@ class _PhPageState extends State<Ph> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Text(
-                'pH',
+                'Ammonia Level',
                 style: TextStyle(
                   fontSize: 32.0,
                   fontWeight: FontWeight.bold,
@@ -114,28 +110,28 @@ class _PhPageState extends State<Ph> {
                     height: 200.0,
                     // child: CircularProgressIndicator(
                     //   strokeWidth: 5.0,
-                    //   value: _currentPh / _maxPh, // Adjusted for pH
+                    //   value: _currentAmmonia / _maxAmmonia,
                     //   backgroundColor: Color.fromARGB(255, 164, 164, 164),
-                    //   valueColor: AlwaysStoppedAnimation<Color>(
-                    //     Color.fromARGB(255, 34, 71, 255),
-                    //   ),
+                    //   // valueColor: AlwaysStoppedAnimation<Color>(
+                    //   //   Color.fromARGB(255, 34, 71, 255),
+                    //   // ),
                     // ),
                   ),
                   GestureDetector(
                     // onPanUpdate: (details) {
                     //   setState(() {
                     //     double sensitivity = 1.0;
-                    //     _currentPh -= details.delta.dy * sensitivity;
-                    //     if (_currentPh < _minPh) {
-                    //       _currentPh = _minPh;
-                    //     } else if (_currentPh > _maxPh) {
-                    //       _currentPh = _maxPh;
+                    //     _currentAmmonia -= details.delta.dy * sensitivity;
+                    //     if (_currentAmmonia < _minAmmonia) {
+                    //       _currentAmmonia = _minAmmonia;
+                    //     } else if (_currentAmmonia > _maxAmmonia) {
+                    //       _currentAmmonia = _maxAmmonia;
                     //     }
                     //   });
                     // },
                     child: Container(
-                      width: 160.0,
-                      height: 160.0,
+                      width: 180.0,
+                      height: 180.0,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Color.fromARGB(255, 0, 0, 0),
@@ -143,17 +139,17 @@ class _PhPageState extends State<Ph> {
                           BoxShadow(
                             color: Color.fromARGB(255, 255, 255, 255)
                                 .withOpacity(0.3),
-                            spreadRadius: 12,
-                            blurRadius: 10,
+                            spreadRadius: 14,
+                            blurRadius: 12,
                             offset: Offset(0, 3),
                           ),
                         ],
                       ),
                       child: Center(
                         child: Text(
-                          '${updatedph.toStringAsFixed(1)} pH', // Adjusted for pH
+                          '${_currentAmmonia.toStringAsFixed(3)} mg/L',
                           style: TextStyle(
-                            fontSize: 40,
+                            fontSize: 30,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -167,7 +163,7 @@ class _PhPageState extends State<Ph> {
             SizedBox(height: 50),
             Center(
               child: Text(
-                'pH Threshold',
+                'Maximum Ammonia Level',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white,
@@ -177,7 +173,7 @@ class _PhPageState extends State<Ph> {
             SizedBox(height: 5),
             Center(
               child: Text(
-                'Optimal for $_selectedFishType',
+                'Good for $_selectedFishType',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white,
@@ -186,13 +182,12 @@ class _PhPageState extends State<Ph> {
             ),
             SizedBox(height: 10.0),
             Center(
-              child:
-                  Text('${_phThreshold.toStringAsFixed(1)}', // Adjusted for pH
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 215, 215, 215),
-                      )),
+              child: Text('${_ammoniaThreshold.toStringAsFixed(1)} mg/L',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 215, 215, 215),
+                  )),
             ),
             SizedBox(height: 50),
             Center(
@@ -208,7 +203,7 @@ class _PhPageState extends State<Ph> {
                           Color.fromARGB(255, 203, 203, 203).withOpacity(0.5)),
                 ),
                 child: Text(
-                  getPhMessage(),
+                  getAmmoniaMessage(),
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.white,

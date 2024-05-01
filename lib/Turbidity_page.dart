@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TurbidityPage extends StatefulWidget {
   @override
@@ -6,8 +8,65 @@ class TurbidityPage extends StatefulWidget {
 }
 
 class _TurbidityPageState extends State<TurbidityPage> {
-  double _currentTurbidity = 0.0; // Initial turbidity
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
+  late User _user;
+  late String _selectedFishType = '';
+  double _currentTurbidity = 0.0; // Initial turbidity level
+  double _minTurbidity = 0.0;
   double _maxTurbidity = 100.0;
+  double _turbidityThreshold = 0.0; // Turbidity threshold for the selected fish
+
+  @override
+  void initState() {
+    super.initState();
+    _user = FirebaseAuth.instance.currentUser!;
+    _fetchSelectedFishType();
+    _database.child('Turbidity').onValue.listen((event) {
+      if (event.snapshot.value != null) {
+        setState(() {
+          _currentTurbidity =
+              double.parse(event.snapshot.value.toString()) / 34;
+        });
+      }
+    });
+  }
+
+  Future<void> _fetchSelectedFishType() async {
+    try {
+      DataSnapshot snapshot =
+          await _database.child('users/${_user.uid}/selectedFishType').get();
+      if (snapshot.value != null) {
+        setState(() {
+          _selectedFishType = snapshot.value.toString();
+        });
+        _fetchTurbidityThreshold();
+      }
+    } catch (error) {
+      print('Error fetching selected fish type: $error');
+    }
+  }
+
+  Future<void> _fetchTurbidityThreshold() async {
+    try {
+      DataSnapshot snapshot =
+          await _database.child('Fish/$_selectedFishType/Turbidity').get();
+      if (snapshot.value != null) {
+        setState(() {
+          _turbidityThreshold = double.parse(snapshot.value.toString());
+        });
+      }
+    } catch (error) {
+      print('Error fetching turbidity threshold: $error');
+    }
+  }
+
+  String getTurbidityMessage() {
+    if (_currentTurbidity >= _turbidityThreshold) {
+      return 'Turbidity level is higher for $_selectedFishType. Take action to lower it !';
+    } else {
+      return 'Turbidity level is within the acceptable range.';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,36 +93,45 @@ class _TurbidityPageState extends State<TurbidityPage> {
             ),
             SizedBox(height: 30.0),
             Center(
+              child: Text(_selectedFishType,
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 215, 215, 215),
+                  )),
+            ),
+            SizedBox(height: 50.0),
+            Center(
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   Container(
                     width: 200.0,
                     height: 200.0,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 5.0,
-                      value: _currentTurbidity / _maxTurbidity,
-                      backgroundColor: Color.fromARGB(255, 164, 164, 164),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color.fromARGB(255, 34, 71, 255),
-                      ),
-                    ),
+                    // child: CircularProgressIndicator(
+                    //   strokeWidth: 5.0,
+                    //   value: _currentTurbidity / _maxTurbidity,
+                    //   backgroundColor: Color.fromARGB(255, 164, 164, 164),
+                    //   // valueColor: AlwaysStoppedAnimation<Color>(
+                    //   //   Color.fromARGB(255, 34, 71, 255),
+                    //   // ),
+                    // ),
                   ),
                   GestureDetector(
-                    onPanUpdate: (details) {
-                      setState(() {
-                        double sensitivity = 1.0;
-                        _currentTurbidity -= details.delta.dy * sensitivity;
-                        if (_currentTurbidity < 0) {
-                          _currentTurbidity = 0;
-                        } else if (_currentTurbidity > _maxTurbidity) {
-                          _currentTurbidity = _maxTurbidity;
-                        }
-                      });
-                    },
+                    // onPanUpdate: (details) {
+                    //   setState(() {
+                    //     double sensitivity = 1.0;
+                    //     _currentTurbidity -= details.delta.dy * sensitivity;
+                    //     if (_currentTurbidity < _minTurbidity) {
+                    //       _currentTurbidity = _minTurbidity;
+                    //     } else if (_currentTurbidity > _maxTurbidity) {
+                    //       _currentTurbidity = _maxTurbidity;
+                    //     }
+                    //   });
+                    // },
                     child: Container(
-                      width: 160.0,
-                      height: 160.0,
+                      width: 180.0,
+                      height: 180.0,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Color.fromARGB(255, 0, 0, 0),
@@ -71,17 +139,17 @@ class _TurbidityPageState extends State<TurbidityPage> {
                           BoxShadow(
                             color: Color.fromARGB(255, 255, 255, 255)
                                 .withOpacity(0.3),
-                            spreadRadius: 12,
-                            blurRadius: 10,
+                            spreadRadius: 16,
+                            blurRadius: 12,
                             offset: Offset(0, 3),
                           ),
                         ],
                       ),
                       child: Center(
                         child: Text(
-                          '${_currentTurbidity.toStringAsFixed(1)}',
+                          '${_currentTurbidity.toStringAsFixed(1)} NTU',
                           style: TextStyle(
-                            fontSize: 40,
+                            fontSize: 30,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -92,22 +160,20 @@ class _TurbidityPageState extends State<TurbidityPage> {
                 ],
               ),
             ),
-            SizedBox(height: 20),
-            Center(
-              child: Text(
-                getTurbidityEffect(_currentTurbidity),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
             SizedBox(height: 50),
             Center(
               child: Text(
-                'Maximum Turbidity',
+                'Maximum Turbidity Level',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            SizedBox(height: 5),
+            Center(
+              child: Text(
+                'Good for $_selectedFishType',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white,
@@ -116,7 +182,7 @@ class _TurbidityPageState extends State<TurbidityPage> {
             ),
             SizedBox(height: 10.0),
             Center(
-              child: Text('$_maxTurbidity',
+              child: Text('${_turbidityThreshold.toStringAsFixed(1)} NTU',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -137,12 +203,10 @@ class _TurbidityPageState extends State<TurbidityPage> {
                           Color.fromARGB(255, 203, 203, 203).withOpacity(0.5)),
                 ),
                 child: Text(
-                  'Current turbidity is good for the fish. ',
-                  // textAlign: TextAlign.center,
+                  getTurbidityMessage(),
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.white,
-                    // fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -151,20 +215,5 @@ class _TurbidityPageState extends State<TurbidityPage> {
         ),
       ),
     );
-  }
-
-  // Function to get the effect of current turbidity
-  String getTurbidityEffect(double turbidity) {
-    if (turbidity < 10) {
-      return 'Very Clear';
-    } else if (turbidity < 20) {
-      return 'Clear';
-    } else if (turbidity < 30) {
-      return 'Slightly Cloudy';
-    } else if (turbidity < 40) {
-      return 'Moderately Cloudy';
-    } else {
-      return 'Very Cloudy';
-    }
   }
 }

@@ -130,27 +130,27 @@ class _TemperaturePageState extends State<TemperaturePage> {
                   Container(
                     width: 200.0,
                     height: 200.0,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 5.0,
-                      value: _currentTemperature / _maxTemperature,
-                      backgroundColor: Color.fromARGB(255, 164, 164, 164),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color.fromARGB(255, 34, 71, 255),
-                      ),
-                    ),
+                    // child: CircularProgressIndicator(
+                    //   strokeWidth: 5.0,
+                    //   value: _currentTemperature / _maxTemperature,
+                    //   backgroundColor: Color.fromARGB(255, 164, 164, 164),
+                    //   valueColor: AlwaysStoppedAnimation<Color>(
+                    //     Color.fromARGB(255, 34, 71, 255),
+                    //   ),
+                    // ),
                   ),
                   GestureDetector(
-                    onPanUpdate: (details) {
-                      setState(() {
-                        double sensitivity = 1.0;
-                        _currentTemperature -= details.delta.dy * sensitivity;
-                        if (_currentTemperature < _minTemperature) {
-                          _currentTemperature = _minTemperature;
-                        } else if (_currentTemperature > _maxTemperature) {
-                          _currentTemperature = _maxTemperature;
-                        }
-                      });
-                    },
+                    // onPanUpdate: (details) {
+                    //   setState(() {
+                    //     double sensitivity = 1.0;
+                    //     _currentTemperature -= details.delta.dy * sensitivity;
+                    //     if (_currentTemperature < _minTemperature) {
+                    //       _currentTemperature = _minTemperature;
+                    //     } else if (_currentTemperature > _maxTemperature) {
+                    //       _currentTemperature = _maxTemperature;
+                    //     }
+                    //   });
+                    // },
                     child: Container(
                       width: 160.0,
                       height: 160.0,

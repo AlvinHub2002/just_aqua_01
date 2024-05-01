@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,20 +27,16 @@ class _LandingPageState extends State<LandingPage> {
   String ammoniaValue = '';
   String turbidityValue = '';
   String pHValue = '';
-  double phupdate = 0.0;
-  int turbidityUpdate = 0;
   String _selectedFishType = '';
-  double? _temperatureThreshold;
-  double? _ammoniaThreshold;
-  double? _turbidityThreshold;
-  double? _pHThreshold;
+  double _temperatureThreshold = 0.0;
+  double _ammoniaThreshold = 0.0;
+  double _turbidityThreshold = 0.0;
+  double _pHThreshold = 0.0;
   bool _temperatureExceeded = false;
   bool _ammoniaExceeded = false;
   bool _turbidityExceeded = false;
   bool _pHExceeded = false;
   bool _initialLoad = true;
-  DatabaseReference _userRef = FirebaseDatabase.instance.ref().child('users');
-  String? _userDisplayName;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
@@ -55,42 +49,6 @@ class _LandingPageState extends State<LandingPage> {
     _initializeLocalNotifications();
     _requestNotificationPermissions();
     _configureFirebaseMessaging();
-    _fetchCurrentUser(); // _fetchRealtimeData(); // Call initially to fetch data and check thresholds
-  }
-
-  Future<void> _fetchCurrentUser() async {
-    _user = FirebaseAuth.instance.currentUser!;
-    String uid = _user.uid;
-
-    try {
-      if (_userRef != null) {
-        print(uid);
-        DataSnapshot snapshot = await _userRef.child(uid).get();
-        var userData = snapshot.value as Map?;
-        print(userData);
-        if (userData != null) {
-          String? username = userData['username'] as String?;
-
-          // Check if the user has logged in using Google
-          if (_user.providerData[0].providerId == 'google.com') {
-            // If logged in using Google, use Google display name
-            username = _user.displayName;
-            print(_user.displayName);
-          }
-
-          if (username != null) {
-            await _user.updateDisplayName(username);
-            setState(() {
-              _userDisplayName = username;
-            });
-          }
-        } else {
-          print('User data is null');
-        }
-      }
-    } catch (error) {
-      print('Error fetching username: $error');
-    }
   }
 
   void _initializeLocalNotifications() {
@@ -188,7 +146,13 @@ class _LandingPageState extends State<LandingPage> {
       if (snapshot.value != null) {
         setState(() {
           temperatureValue = snapshot.value.toString();
-          _checkThresholds();
+          if (_initialLoad) {
+            _initialLoad = false;
+            _temperatureExceeded =
+                double.parse(temperatureValue) > _temperatureThreshold;
+          } else {
+            _checkTemperatureExceeded(double.parse(temperatureValue));
+          }
         });
       }
     });
@@ -197,7 +161,12 @@ class _LandingPageState extends State<LandingPage> {
       if (snapshot.value != null) {
         setState(() {
           ammoniaValue = snapshot.value.toString();
-          _checkThresholds();
+          if (_initialLoad) {
+            _initialLoad = false;
+            _ammoniaExceeded = double.parse(ammoniaValue) > _ammoniaThreshold;
+          } else {
+            _checkAmmoniaExceeded(double.parse(ammoniaValue));
+          }
         });
       }
     });
@@ -205,11 +174,13 @@ class _LandingPageState extends State<LandingPage> {
       var snapshot = event.snapshot;
       if (snapshot.value != null) {
         setState(() {
-          int? TurbidityValueDouble = int.tryParse(snapshot.value.toString());
-          if (TurbidityValueDouble != null) {
-            int turbidityUpdate = (TurbidityValueDouble / 34).toInt();
-            turbidityValue = turbidityUpdate.toString();
-            _checkThresholds();
+          turbidityValue = snapshot.value.toString();
+          if (_initialLoad) {
+            _initialLoad = false;
+            _turbidityExceeded =
+                double.parse(turbidityValue) > _turbidityThreshold;
+          } else {
+            _checkTurbidityExceeded(double.parse(turbidityValue));
           }
         });
       }
@@ -218,64 +189,16 @@ class _LandingPageState extends State<LandingPage> {
       var snapshot = event.snapshot;
       if (snapshot.value != null) {
         setState(() {
-          double? phValueDouble = double.tryParse(snapshot.value.toString());
-          if (phValueDouble != null) {
-            double phUpdate = phValueDouble - 4.75;
-            pHValue = phUpdate.toStringAsFixed(3);
-            _checkThresholds();
+          pHValue = snapshot.value.toString();
+          if (_initialLoad) {
+            _initialLoad = false;
+            _pHExceeded = double.parse(pHValue) > _pHThreshold;
           } else {
-            // Handle the case when the pH value cannot be parsed as a double
-            // This could occur if the value from the database is not a valid number
+            _checkPHExceeded(double.parse(pHValue));
           }
         });
       }
     });
-  }
-
-  void _checkThresholds() {
-    if (!_initialLoad) {
-      try {
-        double temperature = double.tryParse(temperatureValue ?? '') ?? 0.0;
-        double ammonia = double.tryParse(ammoniaValue ?? '') ?? 0.0;
-        double turbidity = double.tryParse(turbidityValue ?? '') ?? 0.0;
-        double pH = double.tryParse(pHValue ?? '') ?? 0.0;
-
-        _checkTemperatureExceeded(temperature);
-        _checkAmmoniaExceeded(ammonia);
-        _checkTurbidityExceeded(turbidity);
-        _checkPHExceeded(pH);
-      } catch (e) {
-        print('Error parsing values to double: $e');
-        // Handle the error, such as showing a message to the user or logging it
-      }
-    }
-    _initialLoad = false;
-  }
-
-  String _calculateWaterStatus() {
-    if (_temperatureThreshold == null ||
-        _ammoniaThreshold == null ||
-        _turbidityThreshold == null ||
-        _pHThreshold == null) {
-      return 'Loading...';
-    }
-
-    double temperature = double.tryParse(temperatureValue) ?? 0.0;
-    double ammonia = double.tryParse(ammoniaValue) ?? 0.0;
-    double turbidity = double.tryParse(turbidityValue) ?? 0.0;
-    double pH = double.tryParse(pHValue) ?? 0.0;
-
-    if (temperature > _temperatureThreshold! - 1) {
-      return ("Control the water Temperature !");
-    } else if (ammonia > _ammoniaThreshold! - 0.1) {
-      return ("Control the water Ammonia !");
-    } else if (turbidity > _turbidityThreshold! - 10) {
-      return ("Please clean the water !");
-    } else if (pH > _pHThreshold! - 1) {
-      return 'Control the pH of the water';
-    } else {
-      return 'Water seems to be Good for your $_selectedFishType';
-    }
   }
 
   Future<void> _fetchThresholds() async {
@@ -317,43 +240,39 @@ class _LandingPageState extends State<LandingPage> {
   void _checkTemperatureExceeded(double currentTemperature) {
     bool previouslyExceeded = _temperatureExceeded;
 
-    bool isExceeded = currentTemperature > _temperatureThreshold!;
-
-    // Update the exceeded flag
     setState(() {
-      _temperatureExceeded = isExceeded;
+      _temperatureExceeded = currentTemperature > _temperatureThreshold;
     });
 
-    // Show notification only if the value exceeded the threshold and it was not previously exceeded
-    if (isExceeded && !previouslyExceeded) {
-      // _showTemperatureAlert();
+    if (_temperatureExceeded && !previouslyExceeded) {
+      _showTemperatureAlert();
       _showTemperatureNotification(
         'Temperature Alert!',
         'Temperature has exceeded ',
       );
       _storeNotification('Temperature Alert!', 'Temperature has exceeded');
-    } else if (!isExceeded && previouslyExceeded) {
+    } else if (!_temperatureExceeded && previouslyExceeded) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
     }
   }
 
-  // void _showTemperatureAlert() {
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(
-  //       content: Row(
-  //         children: [
-  //           Icon(Icons.warning, color: Colors.yellow),
-  //           SizedBox(width: 10),
-  //           Text(
-  //             'Temperature exceeded threshold!',
-  //             style: TextStyle(color: Colors.yellow),
-  //           ),
-  //         ],
-  //       ),
-  //       backgroundColor: Colors.red,
-  //     ),
-  //   );
-  // }
+  void _showTemperatureAlert() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.yellow),
+            SizedBox(width: 10),
+            Text(
+              'Temperature exceeded threshold!',
+              style: TextStyle(color: Colors.yellow),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 
   Future<void> _showTemperatureNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -377,38 +296,37 @@ class _LandingPageState extends State<LandingPage> {
 
   void _checkAmmoniaExceeded(double currentAmmonia) {
     bool previouslyExceeded = _ammoniaExceeded;
-    bool isExceeded = currentAmmonia > _ammoniaThreshold!;
 
     setState(() {
-      _ammoniaExceeded = isExceeded;
+      _ammoniaExceeded = currentAmmonia > _ammoniaThreshold;
     });
 
-    if (isExceeded && !previouslyExceeded) {
-      // _showAmmoniaAlert();
+    if (_ammoniaExceeded && !previouslyExceeded) {
+      _showAmmoniaAlert();
       _showAmmoniaNotification('Ammonia Alert!', 'Ammonia has exceeded');
       _storeNotification('Ammonia Alert!', 'Ammonia has exceeded');
-    } else if (!isExceeded && previouslyExceeded) {
+    } else if (!_ammoniaExceeded && previouslyExceeded) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
     }
   }
 
-  // void _showAmmoniaAlert() {
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(
-  //       content: Row(
-  //         children: [
-  //           Icon(Icons.warning, color: Colors.yellow),
-  //           SizedBox(width: 10),
-  //           Text(
-  //             'Ammonia exceeded threshold!',
-  //             style: TextStyle(color: Colors.yellow),
-  //           ),
-  //         ],
-  //       ),
-  //       backgroundColor: Colors.red,
-  //     ),
-  //   );
-  // }
+  void _showAmmoniaAlert() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.yellow),
+            SizedBox(width: 10),
+            Text(
+              'Ammonia exceeded threshold!',
+              style: TextStyle(color: Colors.yellow),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 
   Future<void> _showAmmoniaNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -425,45 +343,44 @@ class _LandingPageState extends State<LandingPage> {
     await flutterLocalNotificationsPlugin.show(
       1,
       title,
-      '$body  $_ammoniaThreshold mg/L',
+      '$body  $_ammoniaThreshold °C',
       platformChannelSpecifics,
     );
   }
 
   void _checkTurbidityExceeded(double currentTurbidity) {
     bool previouslyExceeded = _turbidityExceeded;
-    bool isExceeded = currentTurbidity > _turbidityThreshold!;
 
     setState(() {
-      _turbidityExceeded = isExceeded;
+      _turbidityExceeded = currentTurbidity > _turbidityThreshold;
     });
 
-    if (isExceeded && !previouslyExceeded) {
-      // _showTurbidityAlert();
+    if (_turbidityExceeded && !previouslyExceeded) {
+      _showTurbidityAlert();
       _showTurbidityNotification('Turbidity Alert!', 'Turbidity has exceeded');
       _storeNotification('Turbidity Alert!', 'Turbidity has exceeded');
-    } else if (!isExceeded && previouslyExceeded) {
+    } else if (!_turbidityExceeded && previouslyExceeded) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
     }
   }
 
-  // void _showTurbidityAlert() {
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(
-  //       content: Row(
-  //         children: [
-  //           Icon(Icons.warning, color: Colors.yellow),
-  //           SizedBox(width: 10),
-  //           Text(
-  //             'Turbidity exceeded threshold!',
-  //             style: TextStyle(color: Colors.yellow),
-  //           ),
-  //         ],
-  //       ),
-  //       backgroundColor: Colors.red,
-  //     ),
-  //   );
-  // }
+  void _showTurbidityAlert() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.yellow),
+            SizedBox(width: 10),
+            Text(
+              'Turbidity exceeded threshold!',
+              style: TextStyle(color: Colors.yellow),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 
   Future<void> _showTurbidityNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -480,45 +397,44 @@ class _LandingPageState extends State<LandingPage> {
     await flutterLocalNotificationsPlugin.show(
       1,
       title,
-      '$body  $_turbidityThreshold NTU',
+      '$body  $_turbidityThreshold °C',
       platformChannelSpecifics,
     );
   }
 
   void _checkPHExceeded(double currentPH) {
     bool previouslyExceeded = _pHExceeded;
-    bool isExceeded = currentPH > _pHThreshold!;
 
     setState(() {
-      _pHExceeded = isExceeded;
+      _pHExceeded = currentPH > _pHThreshold;
     });
 
-    if (isExceeded && !previouslyExceeded) {
-      // _showPHAlert();
+    if (_pHExceeded && !previouslyExceeded) {
+      _showPHAlert();
       _showPHNotification('pH Alert!', 'pH has exceeded');
       _storeNotification('pH Alert!', 'pH has exceeded');
-    } else if (!isExceeded && previouslyExceeded) {
+    } else if (!_pHExceeded && previouslyExceeded) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
     }
   }
 
-  // void _showPHAlert() {
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(
-  //       content: Row(
-  //         children: [
-  //           Icon(Icons.warning, color: Colors.yellow),
-  //           SizedBox(width: 10),
-  //           Text(
-  //             'pH exceeded threshold!',
-  //             style: TextStyle(color: Colors.yellow),
-  //           ),
-  //         ],
-  //       ),
-  //       backgroundColor: Colors.red,
-  //     ),
-  //   );
-  // }
+  void _showPHAlert() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.yellow),
+            SizedBox(width: 10),
+            Text(
+              'pH exceeded threshold!',
+              style: TextStyle(color: Colors.yellow),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 
   Future<void> _showPHNotification(String title, String body) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -535,7 +451,7 @@ class _LandingPageState extends State<LandingPage> {
     await flutterLocalNotificationsPlugin.show(
       1,
       title,
-      '$body  $_pHThreshold ',
+      '$body  $_pHThreshold °C',
       platformChannelSpecifics,
     );
   }
@@ -647,10 +563,10 @@ class _LandingPageState extends State<LandingPage> {
             ),
             SizedBox(height: 8),
             Text(
-              _user.displayName ?? '', // Display user's display name
+              'Aquarist',
               style: TextStyle(
                 fontFamily: 'Helvetica',
-                fontSize: 34,
+                fontSize: 40,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -677,7 +593,7 @@ class _LandingPageState extends State<LandingPage> {
                               Text(
                                 "Water Status",
                                 style: TextStyle(
-                                  fontSize: 26,
+                                  fontSize: 28,
                                   fontWeight: FontWeight.bold,
                                   color: Color.fromARGB(255, 255, 255, 255),
                                 ),
@@ -685,9 +601,9 @@ class _LandingPageState extends State<LandingPage> {
                               ),
                               SizedBox(height: 20),
                               Text(
-                                _calculateWaterStatus(),
+                                "Good",
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: Color.fromARGB(255, 177, 177, 177),
                                 ),
@@ -837,42 +753,39 @@ class _LandingPageState extends State<LandingPage> {
     }
 
     if (sensorName == 'Temperature' &&
-        sensorValue != null &&
+        double.tryParse(sensorValue) != null &&
         _selectedFishType.isNotEmpty) {
       double currentTemperature = double.parse(sensorValue);
-      if (_temperatureThreshold != null &&
-          currentTemperature > _temperatureThreshold!) {
+      if (currentTemperature > _temperatureThreshold) {
         cardColor = Colors.red;
       }
     }
 
     if (sensorName == 'Turbidity' &&
-        sensorValue != null &&
+        double.tryParse(sensorValue) != null &&
         _selectedFishType.isNotEmpty) {
       double currentTubidity = double.parse(sensorValue);
-      if (_turbidityThreshold != null &&
-          currentTubidity > _turbidityThreshold!) {
+      if (currentTubidity > _turbidityThreshold) {
         cardColor = Colors.red;
       }
     }
 
     if (sensorName == 'Ammonia' &&
-        sensorValue != null &&
+        double.tryParse(sensorValue) != null &&
         _selectedFishType.isNotEmpty) {
       double currentAmmonia = double.parse(sensorValue);
-      if (_ammoniaThreshold != null && currentAmmonia > _ammoniaThreshold!) {
+      if (currentAmmonia > _ammoniaThreshold) {
         cardColor = Colors.red;
       }
     }
 
     if (sensorName == 'pH' &&
-        sensorValue != null &&
+        double.tryParse(sensorValue) != null &&
         _selectedFishType.isNotEmpty) {
       double currentpH = double.parse(sensorValue);
-      if (_pHThreshold != null && currentpH > _pHThreshold!) {
+      if (currentpH > _pHThreshold) {
         cardColor = Colors.red;
       }
-      sensorValue = currentpH.toStringAsFixed(4);
     }
 
     return GestureDetector(
